@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "meshtatic-tools"
+version = "0.1.0"
+description = ""
+authors = ["James Hodgkinson <james@terminaloutcomes.com>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "~3.12"
+meshtastic = "^2.3.8"
+pydantic = "^2.7.1"
+loguru = "^0.7.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,12 @@
+config.json
+.vscode/
+.DS_Store
+config.py
+dist/
+.env
+.envrc
+*.asc
+build/
+*.egg-info/
+**/__pycache__/*
+.venv
