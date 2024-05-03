@@ -1,10 +1,11 @@
+from enum import IntEnum
 import json
 from typing import Optional
 
 from meshtastic.serial_interface import SerialInterface
 from meshtastic.util import camel_to_snake
 from loguru import logger
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class MqttConfig(BaseModel):
@@ -20,10 +21,23 @@ class MqttConfig(BaseModel):
     mapReportingEnabled: bool = False
 
 
+class PairingModes(IntEnum):
+    RANDOM_PIN = 0
+    FIXED_PIN = 1
+    NO_PIN = 2
+
+
 class BluetoothConfig(BaseModel):
     enabled: bool = False
     fixedPin: int = 12355
-    # mode: str = "RANDOM_PIN"
+    mode: PairingModes = PairingModes.RANDOM_PIN
+
+    @field_validator("mode", mode="before")
+    def from_str_mode(cls, value: str | int) -> PairingModes:
+        try:
+            return PairingModes(value)
+        except Exception:
+            return PairingModes[value.upper()]
 
 
 class Config(BaseModel):
@@ -37,6 +51,8 @@ def main():
         open("config.json", "r", encoding="utf-8").read()
     )
     client = SerialInterface(None)
+
+    # logger.debug(config.model_dump_json(indent=4))
 
     try:
         client.getShortName()
@@ -87,7 +103,7 @@ def main():
             need_to_write_bluetooth = True
     if need_to_write_bluetooth:
         logger.info("writing bluetooth config")
-        node.writeConfig("bluetooth")
+        # node.writeConfig("bluetooth")
         logger.debug("Waiting for reboot...")
         node.waitForConfig()
 
