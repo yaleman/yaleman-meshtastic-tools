@@ -1,5 +1,6 @@
 from enum import IntEnum
 import json
+import time
 from typing import Optional
 
 from meshtastic.serial_interface import SerialInterface
@@ -88,6 +89,7 @@ def main():
         node.writeConfig("mqtt")
 
         logger.debug("Waiting for reboot...")
+        time.sleep(2)
         node.waitForConfig()
 
     need_to_write_bluetooth = False
@@ -103,8 +105,9 @@ def main():
             need_to_write_bluetooth = True
     if need_to_write_bluetooth:
         logger.info("writing bluetooth config")
-        # node.writeConfig("bluetooth")
+        node.writeConfig("bluetooth")
         logger.debug("Waiting for reboot...")
+        time.sleep(2)
         node.waitForConfig()
 
 
