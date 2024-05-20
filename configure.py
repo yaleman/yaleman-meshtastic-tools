@@ -55,7 +55,19 @@ class NetworkConfig(BaseModel):
     wifi_enabled: bool
 
 
+class OwnerConfig(BaseModel):
+    short_name: str
+    long_name: str
+
+    @field_validator("short_name")
+    def _validate_short_name(cls, value: str) -> str:
+        if len(value) > 4:
+            raise ValueError("Short name must be 4 characters or less")
+        return value
+
+
 class Config(BaseModel):
+    owner: Optional[OwnerConfig] = None
     mqtt: Optional[MqttConfig] = None
     bluetooth: Optional[BluetoothConfig] = None
     lora: LoraConfig
@@ -158,6 +170,38 @@ def do_mqtt_config(node: Node, config: Config, short_name: str) -> None:
         node.waitForConfig()
 
 
+def do_owner_config(node: Node, config: Config, client: SerialInterface) -> None:
+
+    if config.owner is None:
+        logger.debug("No owner config specified!")
+        return
+
+    need_to_write_owner = False
+
+    params = {}
+
+    short_name = client.getShortName()
+
+    if "{id}" in config.owner.long_name:
+        config.owner.long_name = config.owner.long_name.replace("{id}", short_name)
+    if "{id}" in config.owner.short_name:
+        config.owner.short_name = config.owner.short_name.replace("{id}", short_name)
+
+    if client.getLongName() != config.owner.long_name:
+        params["long_name"] = config.owner.long_name
+        need_to_write_owner = True
+    if client.getShortName() != config.owner.short_name:
+        params["short_name"] = config.owner.short_name
+        need_to_write_owner = True
+
+    if need_to_write_owner:
+        node.setOwner(**params)
+
+        logger.debug("Waiting for reboot...")
+        time.sleep(2)
+        node.waitForConfig()
+
+
 def main() -> None:
 
     config = Config.model_validate_json(
@@ -186,6 +230,8 @@ def main() -> None:
 
     logger.debug("Waiting for config...")
     node.waitForConfig()
+
+    do_owner_config(node, config, client)
 
     do_lora_config(node, config)
 
