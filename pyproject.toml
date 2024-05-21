@@ -11,6 +11,7 @@ python = "~3.12"
 meshtastic = "^2.3.8"
 pydantic = "^2.7.1"
 loguru = "^0.7.2"
+click = "^8.1.7"
 
 
 [tool.poetry.group.dev.dependencies]

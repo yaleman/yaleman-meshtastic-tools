@@ -1,12 +1,15 @@
 from enum import IntEnum
 import json
+import sys
 import time
 from typing import Optional
 
+import click
+from loguru import logger
+from meshtastic.tcp_interface import TCPInterface  # type: ignore
 from meshtastic.serial_interface import SerialInterface  # type: ignore
 from meshtastic.util import camel_to_snake  # type: ignore
 from meshtastic.node import Node  # type: ignore
-from loguru import logger
 from pydantic import BaseModel, field_validator
 
 
@@ -47,6 +50,54 @@ class BluetoothConfig(BaseModel):
 
 class LoraConfig(BaseModel):
     region: str
+    modem_preset: Optional[str] = None
+
+    @field_validator("region")
+    def _validate_region(cls, value: str) -> str:
+        valid_regions = [
+            "US",
+            "EU_433",
+            "EU_868",
+            "CN",
+            "JP",
+            "ANZ",
+            "KR",
+            "TW",
+            "RU",
+            "IN",
+            "NZ_865",
+            "TH",
+            "LORA_24",
+            "UA_433",
+            "UA_868",
+            "MY_433",
+            "MY_919",
+            "SG_923",
+        ]
+        if value.upper() not in valid_regions:
+            raise ValueError(
+                f"Invalid region: {value}, should be one of {','.join(valid_regions)}"
+            )
+        return value.upper()
+
+    @field_validator("modem_preset")
+    def _validate_modem_preset(cls, value: str) -> str:
+
+        valid_modes = [
+            "LONG_FAST",
+            "LONG_SLOW",
+            "VERY_LONG_SLOW",
+            "MEDIUM_SLOW",
+            "MEDIUM_FAST",
+            "SHORT_SLOW",
+            "SHORT_FAST",
+            "LONG_MODERATE",
+        ]
+        if value.upper() not in valid_modes:
+            raise ValueError(
+                f"Invalid modem preset: {value}, should be one of {','.join(valid_modes)}"
+            )
+        return value.upper()
 
 
 class NetworkConfig(BaseModel):
@@ -98,15 +149,33 @@ def do_network_config(node: Node, config: Config) -> None:
 
 def do_lora_config(node: Node, config: Config) -> None:
 
+    need_to_write_lora = False
+    # check and set the lorawan region
     if not hasattr(node.localConfig.lora, config.lora.region):
         logger.error("Invalid region from config: {}", config.lora.region)
         return
-    logger.info("Current LORA region: {}", node.localConfig.lora.region)
+    # logger.info("Current LORA region: {}", node.localConfig.lora.region)
     wanted_region = getattr(node.localConfig.lora, config.lora.region)
-    # logger.info("region: {}", wanted_region)
     if node.localConfig.lora.region != wanted_region:
+        need_to_write_lora = True
         logger.info("updating lora region to {}", wanted_region)
         node.localConfig.lora.region = wanted_region
+
+    if config.lora.modem_preset is not None:
+        if not hasattr(node.localConfig.lora, config.lora.modem_preset):
+            logger.error(
+                "Invalid modem_preset from config: {}", config.lora.modem_preset
+            )
+            sys.exit(1)
+
+        wanted_mode = getattr(node.localConfig.lora, config.lora.modem_preset)
+        if node.localConfig.lora.modem_preset != wanted_mode:
+            need_to_write_lora = True
+            logger.info("updating lora modem_preset to {}", wanted_mode)
+            node.localConfig.lora.modem_preset = wanted_mode
+
+    if need_to_write_lora:
+        logger.info("Writing lora config")
         node.writeConfig("lora")
         logger.debug("Waiting for reboot...")
         time.sleep(2)
@@ -188,26 +257,37 @@ def do_owner_config(node: Node, config: Config, client: SerialInterface) -> None
         config.owner.short_name = config.owner.short_name.replace("{id}", short_name)
 
     if client.getLongName() != config.owner.long_name:
+        logger.info("Setting long name to {}", config.owner.long_name)
         params["long_name"] = config.owner.long_name
+        params["short_name"] = config.owner.short_name
         need_to_write_owner = True
     if client.getShortName() != config.owner.short_name:
+        logger.info("Setting short name to {}", config.owner.short_name)
         params["short_name"] = config.owner.short_name
         need_to_write_owner = True
 
     if need_to_write_owner:
         node.setOwner(**params)
-
         logger.debug("Waiting for reboot...")
         time.sleep(2)
         node.waitForConfig()
 
 
-def main() -> None:
+@click.command()
+@click.option("config_file", "--config", "-c", type=click.File("r"), required=False)
+@click.option("--host", "-h", type=str, required=False)
+def main(config_file: Optional[str] = None, host: Optional[str] = None) -> None:
 
-    config = Config.model_validate_json(
-        open("config.json", "r", encoding="utf-8").read()
-    )
-    client = SerialInterface(None)
+    if config_file is None:
+        config_file = "config.json"
+
+    config = Config.model_validate_json(open(config_file, "r", encoding="utf-8").read())
+    logger.debug("Read config OK")
+
+    if host is not None:
+        client = TCPInterface(hostname=host)
+    else:
+        client = SerialInterface(None)
 
     # logger.debug(config.model_dump_json(indent=4))
 
