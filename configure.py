@@ -1,8 +1,9 @@
 from enum import IntEnum
+from io import BytesIO
 import json
 import sys
 import time
-from typing import Optional
+from typing import Optional, TextIO
 
 import click
 from loguru import logger
@@ -335,7 +336,9 @@ def do_gps_config(
 @click.command()
 @click.option("config_file", "--config", "-c", type=click.File("r"), required=False)
 @click.option("--host", "-h", type=str, required=False)
-def main(config_file: Optional[str] = None, host: Optional[str] = None) -> None:
+def main(
+    config_file: Optional[TextIO | BytesIO] = None, host: Optional[str] = None
+) -> None:
 
     if config_file is None:
         config = Config.model_validate_json(
