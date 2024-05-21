@@ -117,12 +117,20 @@ class OwnerConfig(BaseModel):
         return value
 
 
+class GpsConfig(BaseModel):
+    fixed_position: Optional[bool] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    altitude: Optional[float] = None
+
+
 class Config(BaseModel):
     owner: Optional[OwnerConfig] = None
     mqtt: Optional[MqttConfig] = None
     bluetooth: Optional[BluetoothConfig] = None
     lora: LoraConfig
     network: Optional[NetworkConfig] = None
+    gps: Optional[GpsConfig] = None
 
 
 def do_network_config(node: Node, config: Config) -> None:
@@ -239,7 +247,9 @@ def do_mqtt_config(node: Node, config: Config, short_name: str) -> None:
         node.waitForConfig()
 
 
-def do_owner_config(node: Node, config: Config, client: SerialInterface) -> None:
+def do_owner_config(
+    node: Node, config: Config, client: SerialInterface | TCPInterface
+) -> None:
 
     if config.owner is None:
         logger.debug("No owner config specified!")
@@ -273,15 +283,66 @@ def do_owner_config(node: Node, config: Config, client: SerialInterface) -> None
         node.waitForConfig()
 
 
+def do_gps_config(
+    node: Node, config: Config, client: SerialInterface | TCPInterface
+) -> None:
+    if config.gps is None:
+        logger.debug("no GPS config")
+        return
+
+    need_to_write_gps = False
+
+    if config.gps.fixed_position is not None:
+        if node.localConfig.position.fixed_position != config.gps.fixed_position:
+            if config.gps.latitude is None or config.gps.longitude is None:
+                logger.error("Specify the lat/long in config for fixed position!")
+                sys.exit(1)
+
+            if config.gps.fixed_position:
+                # need to disable it, set position then re-enable it!
+                node.localConfig.position.fixed_position = False
+
+                logger.info("writing gps config")
+                node.writeConfig("position")
+                logger.debug("Waiting for reboot...")
+                time.sleep(2)
+                node.waitForConfig()
+                alt = config.gps.altitude if config.gps.altitude is not None else 0
+                logger.debug(
+                    "Setting position to lat: {}, long: {}, alt: {}",
+                    config.gps.latitude,
+                    config.gps.longitude,
+                    alt,
+                )
+                client.sendPosition(
+                    latitude=config.gps.latitude,
+                    longitude=config.gps.longitude,
+                    altitude=alt,
+                )
+
+            logger.debug("Setting fixed position to {}", config.gps.fixed_position)
+            node.localConfig.position.fixed_position = config.gps.fixed_position
+            need_to_write_gps = True
+
+        if need_to_write_gps:
+            logger.info("writing gps config")
+            node.writeConfig("position")
+            logger.debug("Waiting for reboot...")
+            time.sleep(2)
+            node.waitForConfig()
+
+
 @click.command()
 @click.option("config_file", "--config", "-c", type=click.File("r"), required=False)
 @click.option("--host", "-h", type=str, required=False)
 def main(config_file: Optional[str] = None, host: Optional[str] = None) -> None:
 
     if config_file is None:
-        config_file = "config.json"
-
-    config = Config.model_validate_json(open(config_file, "r", encoding="utf-8").read())
+        config = Config.model_validate_json(
+            open("config.json", "r", encoding="utf-8").read()
+        )
+    else:
+        config = Config.model_validate_json(config_file.read())
     logger.debug("Read config OK")
 
     if host is not None:
@@ -320,6 +381,8 @@ def main(config_file: Optional[str] = None, host: Optional[str] = None) -> None:
     do_bluetooth_config(node, config)
 
     do_network_config(node, config)
+
+    do_gps_config(node, config, client)
 
 
 if __name__ == "__main__":
