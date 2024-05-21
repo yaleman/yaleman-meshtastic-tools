@@ -10,3 +10,5 @@ build/
 *.egg-info/
 **/__pycache__/*
 .venv
+# firmware folders
+firmware-*/
