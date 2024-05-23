@@ -1,7 +1,6 @@
 *.json
 .vscode/
 .DS_Store
-config.py
 dist/
 .env
 .envrc
@@ -12,3 +11,5 @@ build/
 .venv
 # firmware folders
 firmware-*/
+config*.yml
+configs

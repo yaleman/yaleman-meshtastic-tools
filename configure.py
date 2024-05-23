@@ -11,7 +11,7 @@ from meshtastic.tcp_interface import TCPInterface  # type: ignore
 from meshtastic.serial_interface import SerialInterface  # type: ignore
 from meshtastic.util import camel_to_snake  # type: ignore
 from meshtastic.node import Node  # type: ignore
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 
 
 class MqttConfig(BaseModel):
@@ -102,8 +102,8 @@ class LoraConfig(BaseModel):
 
 
 class NetworkConfig(BaseModel):
-    wifi_ssid: str
-    wifi_psk: str
+    wifi_ssid: Optional[str] = None
+    wifi_psk: Optional[str] = None
     wifi_enabled: bool
 
 
@@ -123,9 +123,11 @@ class GpsConfig(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     altitude: Optional[float] = None
+    position_broadcast_smart_enabled: Optional[bool] = None
 
 
 class Config(BaseModel):
+    serial_port: Optional[str] = None
     owner: Optional[OwnerConfig] = None
     mqtt: Optional[MqttConfig] = None
     bluetooth: Optional[BluetoothConfig] = None
@@ -133,31 +135,49 @@ class Config(BaseModel):
     network: Optional[NetworkConfig] = None
     gps: Optional[GpsConfig] = None
 
+    @model_validator(mode="after")
+    def verify_config(self) -> "Config":
+        if (self.network is not None and self.network.wifi_enabled) and (
+            self.bluetooth is not None and self.bluetooth.enabled
+        ):
+            raise ValueError(
+                "You can't have BLE and Wifi enabled if this is an ESP32 - choose one!"
+            )
+        return self
+
 
 def do_network_config(node: Node, config: Config) -> None:
-    if config.network is not None:
-        need_to_write_network = False
-        for key, value in config.network.model_dump().items():
-            key = camel_to_snake(key)
-            node.localConfig.network.wifi_enabled
-            if not hasattr(node.localConfig.network, key):
-                logger.debug(f"network has no attribute {key}")
-                continue
-            oldvalue = getattr(node.localConfig.network, key)
-            if oldvalue != value:
-                setattr(node.localConfig.network, key, value)
-                logger.info(f"updating network/{key} from {oldvalue} to {value}")
-                need_to_write_network = True
-        if need_to_write_network:
-            logger.info("writing newtork config")
-            node.writeConfig("network")
-            logger.debug("Waiting for reboot...")
-            time.sleep(2)
-            node.waitForConfig()
+
+    if config.network is None:
+        logger.debug("No network config...")
+        return
+    logger.debug("Doing network config")
+    need_to_write_network = False
+    for key, value in config.network.model_dump().items():
+        key = camel_to_snake(key)
+        if value is None:
+            continue
+        logger.debug("key: {}, value: {}", key, value)
+        node.localConfig.network.wifi_enabled
+        if not hasattr(node.localConfig.network, key):
+            logger.debug(f"network has no attribute {key}")
+            continue
+        oldvalue = getattr(node.localConfig.network, key)
+        if oldvalue != value:
+            setattr(node.localConfig.network, key, value)
+            logger.info(f"updating network/{key} from {oldvalue} to {value}")
+            need_to_write_network = True
+    if need_to_write_network:
+        logger.info("writing newtork config")
+        node.writeConfig("network")
+        logger.debug("Waiting for reboot...")
+        time.sleep(2)
+        node.waitForConfig()
 
 
 def do_lora_config(node: Node, config: Config) -> None:
 
+    logger.debug("Doing lora config")
     need_to_write_lora = False
     # check and set the lorawan region
     if not hasattr(node.localConfig.lora, config.lora.region):
@@ -192,10 +212,12 @@ def do_lora_config(node: Node, config: Config) -> None:
 
 
 def do_bluetooth_config(node: Node, config: Config) -> None:
+
     need_to_write_bluetooth = False
     if config.bluetooth is None:
         logger.debug("No bluetooth config")
         return
+    logger.debug("Doing bluetooth config")
     for key, value in config.bluetooth.model_dump().items():
         key = camel_to_snake(key)
         if not hasattr(node.localConfig.bluetooth, key):
@@ -216,11 +238,11 @@ def do_bluetooth_config(node: Node, config: Config) -> None:
 
 def do_mqtt_config(node: Node, config: Config, short_name: str) -> None:
 
-    need_to_write_mqtt = False
-
     if config.mqtt is None:
         logger.debug("No MQTT config")
         return
+    need_to_write_mqtt = False
+    logger.debug("Doing MQTT config")
 
     if config.mqtt.root is not None:
         if "{id}" in config.mqtt.root:
@@ -256,6 +278,7 @@ def do_owner_config(
         logger.debug("No owner config specified!")
         return
 
+    logger.debug("Doing owner config")
     need_to_write_owner = False
 
     params = {}
@@ -291,6 +314,7 @@ def do_gps_config(
         logger.debug("no GPS config")
         return
 
+    logger.debug("Doing GPS config")
     need_to_write_gps = False
 
     if config.gps.fixed_position is not None:
@@ -325,6 +349,20 @@ def do_gps_config(
             node.localConfig.position.fixed_position = config.gps.fixed_position
             need_to_write_gps = True
 
+        if config.gps.position_broadcast_smart_enabled is not None:
+            if (
+                node.localConfig.position.position_broadcast_smart_enabled
+                != config.gps.position_broadcast_smart_enabled
+            ):
+                logger.debug(
+                    "Setting position_broadcast_smart_enabled to {}",
+                    config.gps.position_broadcast_smart_enabled,
+                )
+                node.localConfig.position.position_broadcast_smart_enabled = (
+                    config.gps.position_broadcast_smart_enabled
+                )
+                need_to_write_gps = True
+
         if need_to_write_gps:
             logger.info("writing gps config")
             node.writeConfig("position")
@@ -336,8 +374,11 @@ def do_gps_config(
 @click.command()
 @click.option("config_file", "--config", "-c", type=click.File("r"), required=False)
 @click.option("--host", "-h", type=str, required=False)
+@click.option("--serial", "-s", type=str, required=False)
 def main(
-    config_file: Optional[TextIO | BytesIO] = None, host: Optional[str] = None
+    config_file: Optional[TextIO | BytesIO] = None,
+    host: Optional[str] = None,
+    serial: Optional[str] = None,
 ) -> None:
 
     if config_file is None:
@@ -349,11 +390,12 @@ def main(
     logger.debug("Read config OK")
 
     if host is not None:
+        logger.debug("Using TCPInterface({})", host)
         client = TCPInterface(hostname=host)
     else:
-        client = SerialInterface(None)
-
-    # logger.debug(config.model_dump_json(indent=4))
+        serial_port = serial if serial is not None else config.serial_port
+        logger.debug("Using Serial({})", serial_port)
+        client = SerialInterface(serial_port)
 
     try:
         client.getShortName()
@@ -367,9 +409,6 @@ def main(
     # logger.info("Device short name: {}", short_name)
     logger.info("Device info:\n{}", client.myInfo)
 
-    # my_node_num = client.myInfo.my_node_num
-    # node = client.getNode(my_node_num)
-    # logger.info("printing metadata...\n{}", node.getMetadata())
     node = client.localNode
 
     logger.debug("Waiting for config...")
@@ -381,12 +420,15 @@ def main(
 
     do_mqtt_config(node, config, short_name)
 
-    do_bluetooth_config(node, config)
-
     do_network_config(node, config)
+
+    do_bluetooth_config(node, config)
 
     do_gps_config(node, config, client)
 
 
 if __name__ == "__main__":
+    logger.warning(
+        "This is jank and you really should just use 'meshtastic --configure' instead!"
+    )
     main()
