@@ -1,0 +1,47 @@
+tests:
+  - name: bytes_test
+    target_processors: '/pipeline/processors'
+    environment: {}
+    input_batch:
+      - content: 'h����G[%qRf�� 5j�S5�B6V=�pRfE<AH`���������LongFast	!050c2e68'
+        metadata:
+          mqtt_topic: "meshtastic/2e68/2/e/LongFast/!050c2e68"
+    output_batches:
+      -
+        - json_equals: {
+            "binary": true,
+            "message": "aO+/ve+/ve+/ve+/vUdbJXFSZu+/ve+/vSA1au+/vVM177+9QjZWPe+/vXBSZkU8QUhg77+977+977+977+977+977+977+977+977+9TG9uZ0Zhc3QJITA1MGMyZTY4",
+            "topic" : "meshtastic/2e68/2/e/LongFast/!050c2e68"
+          }
+
+  - name: bytes_test_2
+    target_processors: '/pipeline/processors'
+    environment: {}
+    input_batch:
+      - file_content: testmessage.bytes
+        metadata:
+          mqtt_topic: "meshtastic/2e68/2/e/LongFast/!050c2e68"
+    output_batches:
+      -
+        - json_equals: {
+            "binary": true,
+            "message": "CkANdIvj4hWEUsBjIhQIRhIOCgz44qjjdMlc2mguDAUYATWjwFMDPQCBUmZFAACOwUgEUAFg7/7/////////AXgGEghMb25nRmFzdBoJITA1MGMyZTY4",
+            "topic" : "meshtastic/2e68/2/e/LongFast/!050c2e68"
+          }
+
+  - name: json_test
+    target_processors: '/pipeline/processors'
+    environment: {}
+    input_batch:
+      - content: '{"channel":0,"from":3186665312,"hops_away":0,"id":1446396605,"payload":{"altitude":7,"latitude_i":-274664344,"longitude_i":1531438018,"precision_bits":32,"sats_in_view":4,"time":1716678942},"rssi":-86,"sender":"!050c2e68","snr":11.75,"timestamp":1716678878,"to":3604815938,"type":"position"}'
+        metadata:
+          mqtt_topic: "meshtastic/2e68/2/json/LongFast/!050c2e68"
+    output_batches:
+      -
+        - json_equals: {
+            "channel":0,"from":3186665312,"hops_away":0,"id":1446396605,"payload":{"altitude":7,"latitude_i":-274664344,"longitude_i":1531438018,"precision_bits":32,"sats_in_view":4,"time":1716678942},"rssi":-86,"sender":"!050c2e68","snr":11.75,"timestamp":1716678878,"to":3604815938,"type":"position",
+            "topic" : "meshtastic/2e68/2/json/LongFast/!050c2e68"
+          }
+
+
+#

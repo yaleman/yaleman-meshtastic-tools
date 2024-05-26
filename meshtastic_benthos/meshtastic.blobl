@@ -1,0 +1,20 @@
+if meta("mqtt_topic").re_match("^[a-z]+/[a-zA-Z0-9]{4}/[0-9]+/stat") {
+    root = {
+        "value" : content().string(),
+    }
+} else {
+    root = content().parse_json().catch(
+            {
+                "message" : content().encode("base64"),
+                "binary" : true,
+            }
+        )
+}
+
+if root.type() == "number" {
+    root = { "value" : root }
+} else if root.type() == "string" {
+    root = { "value" : root }
+}
+
+root.topic = meta("mqtt_topic")

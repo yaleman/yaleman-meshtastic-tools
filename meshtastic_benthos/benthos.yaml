@@ -1,0 +1,19 @@
+input:
+  label: "mqtt"
+  mqtt:
+    urls:
+      - "tcp://${MQTT_SERVER}:1883"
+    client_id: ""
+    connect_timeout: "30s"
+    topics:
+      - "msh/#"
+      - "meshtastic/#"
+    auto_replay_nacks: true
+pipeline:
+  processors:
+  - label: "bloblang"
+    bloblang: from "/conf/meshtastic.blobl"
+output:
+  label: "stdout"
+  stdout:
+    codec: "lines"
