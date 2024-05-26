@@ -12,7 +12,7 @@ input:
 pipeline:
   processors:
   - label: "bloblang"
-    bloblang: from "./meshtastic.blobl"
+    bloblang: from "${CONF_DIR}meshtastic.blobl"
 output:
   label: "stdout"
   stdout:
