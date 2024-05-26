@@ -7,7 +7,7 @@ name: Benthos checks
   pull_request:
 
 jobs:
-  mypy:
+  benthos:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.1.2
