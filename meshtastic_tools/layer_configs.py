@@ -10,13 +10,16 @@ import yaml
 
 def recursive_update(source: Dict[str, Any], dest: Dict[str, Any]) -> Dict[str, Any]:
     """neatly update things, don't just blat them"""
-    for key, value in source.items():
-        if isinstance(value, dict) or isinstance(dest.get(key), dict):
-            logger.debug("recursing into {}", key)
-            dest[key] = recursive_update(value, dest.get(key, {}))
-        else:
-            logger.debug("setting {} -> {}", key, value)
-            dest[key] = value
+    if source is None:
+        dest = source
+    else:
+        for key, value in source.items():
+            if isinstance(value, dict) or isinstance(dest.get(key), dict):
+                logger.debug("recursing into {}", key)
+                dest[key] = recursive_update(value, dest.get(key, {}))
+            else:
+                logger.debug("setting {} -> {}", key, value)
+                dest[key] = value
     return dest
 
 

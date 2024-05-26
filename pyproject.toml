@@ -1,10 +1,12 @@
 [tool.poetry]
-name = "meshtatic-tools"
+name = "meshtastic-tools"
 version = "0.1.0"
 description = ""
 authors = ["James Hodgkinson <james@terminaloutcomes.com>"]
 readme = "README.md"
-package-mode = false
+
+[tool.poetry.scripts]
+"layer-configs" = "meshtastic_tools.layer_configs:main"
 
 [tool.poetry.dependencies]
 python = "~3.12"
