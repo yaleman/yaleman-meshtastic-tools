@@ -13,3 +13,4 @@ build/
 firmware-*/
 config*.yml
 configs.envrc
+configs
