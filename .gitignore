@@ -12,4 +12,4 @@ build/
 # firmware folders
 firmware-*/
 config*.yml
-configs
+configs.envrc

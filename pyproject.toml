@@ -16,6 +16,7 @@ loguru = "^0.7.2"
 click = "^8.1.7"
 esptool = "^4.7.0"
 pyyaml = "^6.0.1"
+paho-mqtt = "^2.1.0"
 
 
 [tool.poetry.group.dev.dependencies]
