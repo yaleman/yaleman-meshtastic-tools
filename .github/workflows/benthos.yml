@@ -13,8 +13,6 @@ jobs:
       - uses: actions/checkout@v4.1.2
         with:
           fetch-depth: 0 # Fetch all history for .GitInfo and .Lastmod
-      - name: Install Benthos
-        run: curl -Lsf https://www.benthos.dev/sh/install | bash
-      - name: Run Benthos checks
+      - name: Run the checks
         run: |
           cd meshtastic_benthos && ./test_meshtastic_conf.sh
