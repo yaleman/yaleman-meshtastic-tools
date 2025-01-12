@@ -8,11 +8,12 @@ input:
     topics:
       - "msh/#"
       - "meshtastic/#"
+      - "rdz_sonde_server/#"
     auto_replay_nacks: true
 pipeline:
   processors:
-  - label: "bloblang"
-    bloblang: from "${CONF_DIR}meshtastic.blobl"
+    - label: "bloblang"
+      bloblang: from "${CONF_DIR}meshtastic.blobl"
 output:
   label: "stdout"
   stdout:

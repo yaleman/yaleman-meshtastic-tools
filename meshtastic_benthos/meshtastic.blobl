@@ -2,13 +2,19 @@ if meta("mqtt_topic").re_match("^[a-z]+/[a-zA-Z0-9]{4}/[0-9]+/stat") {
     root = {
         "value" : content().string(),
     }
-} else {
+} else if meta("mqtt_topic").re_match(".*LongFast.*") {
     root = content().parse_json().catch(
             {
                 "message" : content().encode("base64"),
                 "binary" : true,
             }
         )
+} else  {
+    root = content().parse_json().catch(
+        {
+            "message" : content()
+        }
+    )
 }
 
 if root.type() == "number" {
