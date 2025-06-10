@@ -1,36 +1,38 @@
-[tool.poetry]
+
+
+[project]
+authors = [{ name = "James Hodgkinson", email = "james@terminaloutcomes.com" }]
+requires-python = "~=3.12"
+dependencies = [
+    "meshtastic<3.0.0,>=2.3.8",
+    "pydantic<3.0.0,>=2.7.1",
+    "loguru<1.0.0,>=0.7.2",
+    "click<9.0.0,>=8.1.7",
+    "esptool<5.0.0,>=4.8.1",
+    "pyyaml<7.0.0,>=6.0.1",
+    "paho-mqtt<3.0.0,>=2.1.0",
+]
 name = "meshtastic-tools"
 version = "0.1.0"
 description = ""
-authors = [
-    "James Hodgkinson <james@terminaloutcomes.com>",
-]
 readme = "README.md"
 
-[tool.poetry.scripts]
+[project.scripts]
 layer-configs = "meshtastic_tools.layer_configs:main"
 
-[tool.poetry.dependencies]
-python = "~3.12"
-meshtastic = "^2.3.8"
-pydantic = "^2.11.5"
-loguru = "^0.7.2"
-click = "^8.1.7"
-esptool = "^4.8.1"
-pyyaml = "^6.0.1"
-paho-mqtt = "^2.1.0"
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.poetry.group.dev.dependencies]
-mypy = "^1.16.0"
-ruff = "^0.4.4"
-pytest = "^8.2.0"
-types-pyyaml = "^6.0.12.20250516"
+[tool.hatch.build.targets.wheel]
+packages = ["collector"]
 
 [tool.mypy]
 plugins = "pydantic.mypy"
 
-[build-system]
-requires = [
-    "poetry-core",
+[dependency-groups]
+dev = [
+    "mypy>=1.16.0",
+    "pytest>=8.4.0",
+    "ruff>=0.11.13",
 ]
-build-backend = "poetry.core.masonry.api"
