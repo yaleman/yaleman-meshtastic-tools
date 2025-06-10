@@ -85,7 +85,7 @@ def parse_message(message_input: bytes, msg: Optional[Any]) -> Optional[str]:
 
             pn = portnums_pb2.PortNum.Name(
                 mp.decoded.portnum
-            )  # type: ignore[no-member]
+            )
             # prefix = f"{mp.channel} [{from_id}->{to_id}] {pn}:"
         except Exception as e:
             print(f"message could not be decrypted {e}", file=sys.stderr)
