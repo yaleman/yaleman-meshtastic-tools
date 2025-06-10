@@ -1,24 +1,26 @@
+import base64
 import json
 import os
 import sys
 from typing import Any, Optional
+
 import click
 import paho.mqtt.client as mqtt
 from meshtastic import mqtt_pb2, portnums_pb2, mesh_pb2, protocols, BROADCAST_NUM  # type: ignore
 from google.protobuf.json_format import MessageToDict  # type: ignore
 
-import base64
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 
-root_topic = "msh"
-default_key = "1PG7OiApB1nwvP+rz05pAQ=="
+ROOT_TOPIC = "msh"
+DEFAULT_KEY = "1PG7OiApB1nwvP+rz05pAQ=="
 NODE_NAMES: dict[str, str] = {}
 
 
 # with thanks to pdxlocs
-def try_decode(mp):
-    key_bytes = base64.b64decode(default_key.encode("ascii"))
+def try_decode(mp: Any) -> None:
+    """ decode a packet """
+    key_bytes = base64.b64decode(DEFAULT_KEY.encode("ascii"))
 
     nonce = getattr(mp, "id").to_bytes(8, "little") + getattr(mp, "from").to_bytes(
         8, "little"
@@ -34,7 +36,8 @@ def try_decode(mp):
     mp.decoded.CopyFrom(data)
 
 
-def on_connect(client: mqtt.Client, userdata, flags, reason_code, properties=None):
+def on_connect(client: mqtt.Client, userdata: Any, flags: Any, reason_code: Any, properties: Optional[dict[str,Any]]=None) -> None:
+    """ handle connect events """
     if reason_code == 0:
         print("Connected!")
         client.subscribe("meshtastic/2/c/#")
@@ -45,20 +48,21 @@ def on_connect(client: mqtt.Client, userdata, flags, reason_code, properties=Non
         print(f"{userdata} {flags} {reason_code} {properties}")
 
 
-def on_disconnect(client, userdata, flags, reason_code, properties=None):
+def on_disconnect(_client: Any, _userdata: Any, _flags: Any, reason_code: Any, _properties: Any=None) -> None:
+    """ handle disconnect events """
     print(f"disconnected with reason code {str(reason_code)}")
 
 
-def parse_message(input: bytes, msg: Optional[Any]) -> Optional[str]:
-
+def parse_message(message_input: bytes, msg: Optional[Any]) -> Optional[str]:
+    """ parse a message from the MQTT broker """
     se = mqtt_pb2.ServiceEnvelope()
     try:
-        se.ParseFromString(input)
+        se.ParseFromString(message_input)
         mp = se.packet
     except Exception as e:
         print(f"ERROR: parsing service envelope: {str(e)}")
         if msg is not None:
-            print(f"{msg.info} {msg.payload}")  # type: ignore
+            print(f"{msg.info} {msg.payload}")
         return None
 
     from_id = getattr(mp, "from")
@@ -78,7 +82,10 @@ def parse_message(input: bytes, msg: Optional[Any]) -> Optional[str]:
     if mp.HasField("encrypted") and not mp.HasField("decoded"):
         try:
             try_decode(mp)
-            pn = portnums_pb2.PortNum.Name(mp.decoded.portnum)
+
+            pn = portnums_pb2.PortNum.Name(
+                mp.decoded.portnum
+            )  # type: ignore[no-member]
             # prefix = f"{mp.channel} [{from_id}->{to_id}] {pn}:"
         except Exception as e:
             print(f"message could not be decrypted {e}", file=sys.stderr)
@@ -111,11 +118,13 @@ def parse_message(input: bytes, msg: Optional[Any]) -> Optional[str]:
     return None
 
 
-def on_message(client, userdata, msg):
+def on_message(_client: Any, _userdata: Any, msg: mqtt.MQTTMessage) -> None:
+    """ handle incoming messages """
     parse_message(msg.payload, msg)
 
 
-def connect(client, username, pw, broker, port):
+def connect(client: Any, username: str, pw: str, broker: str, port: int) -> None:
+    """ connect to the MQTT broker """
     try:
         client.username_pw_set(username, pw)
         client.connect(broker, port, 60)
@@ -125,11 +134,11 @@ def connect(client, username, pw, broker, port):
 
 @click.command()
 @click.option("--hostname", default=os.getenv("MQTT_HOSTNAME"))
-@click.option("--port", default=os.getenv("MQTT_PORT", 1883))
+@click.option("--port", default=int(os.getenv("MQTT_PORT", 1883)), type=int)
 @click.option("--decode")
 def main(
     hostname: Optional[str] = None, port: int = 1883, decode: Optional[str] = None
-):
+) -> None:
     if decode is not None:
         parse_message(
             base64.b64decode(decode.encode("utf-8")),
@@ -141,7 +150,7 @@ def main(
             return
         try:
             client = mqtt.Client(
-                mqtt.CallbackAPIVersion.VERSION2,
+                mqtt.CallbackAPIVersion.VERSION2, # type: ignore[attr-defined]
                 client_id="",
                 clean_session=True,
                 userdata=None,

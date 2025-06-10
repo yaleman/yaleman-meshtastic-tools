@@ -3,9 +3,10 @@ from configure import BluetoothConfig
 
 
 def test_pairingmodes() -> None:
-    BluetoothConfig(mode="RANDOM_PIN")  # type: ignore
+    """ test bluetooth config """
+    BluetoothConfig(mode="RANDOM_PIN")
 
-    BluetoothConfig(mode=1)  # type: ignore
+    BluetoothConfig(mode=1)
 
     with pytest.raises(ValueError):
-        BluetoothConfig(mode="INVALID")  # type: ignore
+        BluetoothConfig(mode="INVALID")

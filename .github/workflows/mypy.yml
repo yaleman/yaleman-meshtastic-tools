@@ -13,13 +13,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth:
+          fetch-depth: 0
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Running mypy
         run: |
-          python --version
           python -m pip install --quiet --no-cache-dir --upgrade uv
-          uv run mypy --strict $(basename $(pwd) | sed -E 's/-/_/g') tests/
+          uv run mypy --strict meshtastic_tools test*.py
