@@ -13,7 +13,7 @@ layer-configs = "meshtastic_tools.layer_configs:main"
 [tool.poetry.dependencies]
 python = "~3.12"
 meshtastic = "^2.3.8"
-pydantic = "^2.7.1"
+pydantic = "^2.11.5"
 loguru = "^0.7.2"
 click = "^8.1.7"
 esptool = "^4.8.1"
