@@ -13,6 +13,22 @@ files = [
 ]
 
 [[package]]
+name = "argcomplete"
+version = "3.6.2"
+description = "Bash tab completion for argparse"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+markers = "sys_platform != \"win32\""
+files = [
+    {file = "argcomplete-3.6.2-py3-none-any.whl", hash = "sha256:65b3133a29ad53fb42c48cf5114752c7ab66c1c38544fdf6460f450c09b42591"},
+    {file = "argcomplete-3.6.2.tar.gz", hash = "sha256:d0519b1bc867f5f4f4713c41ad0aba73a4a5f007449716b16f385f2166dc6adf"},
+]
+
+[package.extras]
+test = ["coverage", "mypy", "pexpect", "ruff", "wheel"]
+
+[[package]]
 name = "bitarray"
 version = "2.9.2"
 description = "efficient arrays of booleans -- C extension"
@@ -519,26 +535,27 @@ gmpy2 = ["gmpy2"]
 
 [[package]]
 name = "esptool"
-version = "4.7.0"
+version = "4.8.1"
 description = "A serial utility to communicate & flash code to Espressif chips."
 optional = false
 python-versions = ">=3.7"
 groups = ["main"]
 files = [
-    {file = "esptool-4.7.0.tar.gz", hash = "sha256:01454e69e1ef3601215db83ff2cb1fc79ece67d24b0e5d43d451b410447c4893"},
+    {file = "esptool-4.8.1.tar.gz", hash = "sha256:dc4ef26b659e1a8dcb019147c0ea6d94980b34de99fbe09121c7941c8b254531"},
 ]
 
 [package.dependencies]
-bitstring = ">=3.1.6"
+argcomplete = {version = ">=3", markers = "sys_platform != \"win32\""}
+bitstring = ">=3.1.6,<4.2.0 || >4.2.0"
 cryptography = ">=2.1.4"
 ecdsa = ">=0.16.0"
 intelhex = "*"
-pyserial = ">=3.0"
+pyserial = ">=3.3"
 PyYAML = ">=5.1"
 reedsolo = ">=1.5.3,<1.8"
 
 [package.extras]
-dev = ["black", "commitizen", "coverage (>=6.0,<7.0)", "flake8 (>=3.2.0)", "flake8-gl-codeclimate", "flake8-import-order", "pre-commit", "pyelftools", "pytest", "pytest-rerunfailures", "requests"]
+dev = ["commitizen", "coverage (>=6.0,<7.0)", "pre-commit", "pyelftools", "pytest", "pytest-rerunfailures", "requests"]
 hsm = ["python-pkcs11"]
 
 [[package]]
@@ -1501,4 +1518,4 @@ all = ["winrt-Windows.Foundation.Collections[all] (==2.0.1)", "winrt-Windows.Fou
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.12"
-content-hash = "1401b0a01dae77f63ffb8726fdf2e1e2c4d8ad98417f5b24dcd327d40347b223"
+content-hash = "4ea07222a823c4df76f0eaa10f1b90b449c5f68df08d8e89e84ac714fd7a1c69"
