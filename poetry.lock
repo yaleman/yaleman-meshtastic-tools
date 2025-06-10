@@ -1251,14 +1251,14 @@ files = [
 
 [[package]]
 name = "types-pyyaml"
-version = "6.0.12.20240311"
+version = "6.0.12.20250516"
 description = "Typing stubs for PyYAML"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "types-PyYAML-6.0.12.20240311.tar.gz", hash = "sha256:a9e0f0f88dc835739b0c1ca51ee90d04ca2a897a71af79de9aec5f38cb0a5342"},
-    {file = "types_PyYAML-6.0.12.20240311-py3-none-any.whl", hash = "sha256:b845b06a1c7e54b8e5b4c683043de0d9caf205e7434b3edc678ff2411979b8f6"},
+    {file = "types_pyyaml-6.0.12.20250516-py3-none-any.whl", hash = "sha256:8478208feaeb53a34cb5d970c56a7cd76b72659442e733e268a94dc72b2d0530"},
+    {file = "types_pyyaml-6.0.12.20250516.tar.gz", hash = "sha256:9f21a70216fc0fa1b216a8176db5f9e0af6eb35d2f2932acb87689d03a5bf6ba"},
 ]
 
 [[package]]
@@ -1559,4 +1559,4 @@ all = ["winrt-Windows.Foundation.Collections[all] (==2.0.1)", "winrt-Windows.Fou
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.12"
-content-hash = "adb5d98bbe9c47cec23e5f83f8805f99b4fec8f18fbf71cb2066d398e3645009"
+content-hash = "cbd6da0aad5271063a8a5b93ab6fa5f325d082b1add967a1f8a7d34dfb24fce4"
